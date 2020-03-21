@@ -7,6 +7,7 @@ Created on Sun Mar 15 18:57:31 2020
 
 import pandas as pd
 #%%
+#Read complete data for country since 2020-03-15 and add metrics
 df = pd.read_csv("C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\inputs\\base_diaria.csv", sep = ";")
 df["active/cases"] = df.active / df.cases
 df["critical/active"] = df.critical / df.active
