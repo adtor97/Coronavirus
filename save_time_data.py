@@ -11,24 +11,26 @@ import requests
 import json
 from datetime import date
 #%%
+#Get daily data for country
 response = requests.get("https://coronavirus-19-api.herokuapp.com/countries")
 json_df = json.dumps(response.json()) 
 df_today = pd.read_json(json_df, orient = 'records')
 df_today["date"] = date.today()
 print(df_today, df_today[df_today.country == "Colombia"])
 #%%
+#Open complete data for country since 2020-03-15
 df_all_days = pd.read_csv("C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\inputs\\base_diaria.csv", sep = ";")
 print(df_all_days.shape, df_all_days[df_all_days.country == "Peru"].cases, df_all_days.date.unique())
 #%%
+#Concat new day on complete data
 df_all_days = pd.concat([df_all_days,df_today], axis = 0)
 print(df_all_days.head(), df_all_days.columns, df_all_days.shape)
 df_all_days.to_csv("C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\inputs\\base_diaria.csv", sep = ";", index = False)
 
 #%%
-#fix date
+'''
+#Delete specific date registers if needed
 fix_date = "2020-03-19"
 df_all_days = df_all_days[df_all_days.date != fix_date]
 df_all_days
-
-
-
+'''
