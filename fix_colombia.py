@@ -31,14 +31,26 @@ ciudad_departamento = {"Anapoima":"Cundinamarca", "Armenia":"Quindio", "Barranqu
                        "Madrid":"Cundinamarca", "Manizales":"Caldas", "Medellín":"Antioquia", "Neiva":"Huila",
                        "Palmira":"Valle del Cauca", "Pereira":"Risaralda", "Popayán":"Cauca", "Rionegro":"Antioquia",
                        "Santa Marta":"Magdalena", "Soacha":"Cundinamarca", "Subachoque":"Cundinamarca", "Tolima":"Tolima",
-                       "Villa del Rosario":"Norte de Santander", "Villavicencio":"Meta", "Viterbo":"Caldas"
+                       "Villa del Rosario":"Norte de Santander", "Villavicencio":"Meta", "Viterbo":"Caldas",
+                       "Guarne":"Antioquia", "Calarcá":"Quindio", "Valledupar":"Cesar",
+                       "La Dorada":"Caldas", "Chinchiná":"Caldas", "San Andrés Islas":"Archipiélago de San Andrés, Providencia y Santa Catalina",
+                       "Yumbo":"Valle del Cauca", "Yopal":"Casanare"
                        }
+
+
+print("ciudades: ", list(ciudad_departamento.keys()))
+print("\n")
+print("departamentos: ", list(ciudad_departamento.values()))
 
 #%%
 #Fuente original: https://www.ins.gov.co/Noticias/Paginas/Coronavirus.aspx
 path_to_csv = "C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\inputs\\casos_colombia.csv"
 df_colombia = pd.read_csv(path_to_csv)
-print("dic ciudades vs ciudades en base (deben ser iguales): ", len(ciudad_departamento), " vs ", len(df_colombia["Ciudad de ubicación"].unique()))
+faltantes = []
+for ciudad in df_colombia["Ciudad de ubicación"].unique():
+    if ciudad not in list(ciudad_departamento.keys()):
+        faltantes = faltantes + [ciudad]
+print("ciudades que faltan agregar al diccionario: ", faltantes)
 #%%
 df_colombia["Ciudad de ubicación"] = df_colombia["Ciudad de ubicación"].replace(ciudad_departamento)
 df_colombia.rename(columns = {"Ciudad de ubicación":"Departamento"}, inplace = True)
@@ -73,4 +85,40 @@ df_colombia.to_excel(path_save_pivoted, index = False)
 df_colombia_fixed = pd.melt(df_colombia, id_vars=['Departamento'], value_vars=columns_ordered)  
 path_save_final = "C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\outputs\\colombia_fixed.xlsx"       
 df_colombia_fixed.to_excel(path_save_final, index = False)
+
+#%%
+#Send email with update
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+import os.path
+fecha = df_colombia_fixed["Fecha de diagnóstico"].max()
+email="adrian135torrejon@gmail.com"
+password="Entel2000"
+send_to_email="pablo.diazv@pucp.edu.pe"
+subject="Update Colombia hasta " + fecha
+message=""
+file_location= path_save_final
+
+msg=MIMEMultipart()
+msg["From"]=email
+msg["To"]=send_to_email
+msg["Subject"]=subject
+msg.attach(MIMEText(message,"plain"))
+filename=os.path.basename(file_location)
+attachment=open(file_location,"rb")
+part=MIMEBase("application","octet-stream")
+part.set_payload((attachment).read())
+encoders.encode_base64(part)
+part.add_header('Content-Disposition',"attachment; filename= %s" % filename)
+msg.attach(part)
+server=smtplib.SMTP('smtp.gmail.com',587)
+server.starttls()
+server.login(email,password)
+text=msg.as_string()
+server.sendmail(email,send_to_email,text)
+server.quit()
+
 
