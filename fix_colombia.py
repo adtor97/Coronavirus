@@ -6,17 +6,54 @@ Created on Sat Mar 21 16:48:56 2020
 """
 
 #%%
+from selenium import webdriver
+import time
+from bs4 import BeautifulSoup
+#%%
+#Automate get data 
+driver = webdriver.Chrome("C:\\Users\\USUARIO\\chromedriver_win32\\chromedriver.exe")
+driver.get("https://www.ins.gov.co/Noticias/Paginas/Coronavirus.aspx")
+time.sleep(20)
+source = driver.page_source
+bs = BeautifulSoup(source)
+table = bs.find_all("table")
+
+print(table[3])
+table.find(tbody)
+tbody.findall(tr)
+
+#%%
 import pandas as pd
-df_colombia = pd.read_excel("C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\inputs\\colombia.xlsx", sheet_name = "colombia")
-print(df_colombia.columns)
+ciudad_departamento = {"Anapoima":"Cundinamarca", "Armenia":"Quindio", "Barranquilla":"Atlántico",
+                       "Bogotá":"Cundinamarca", "Bucaramanga":"Santander", "Buga":"Valle del Cauca", "Cajicá":"Cundinamarca",
+                       "Cali":"Valle del Cauca", "Cartagena":"Bolívar", "Chía":"Cundinamarca", "Cúcuta":"Norte de Santander",
+                       "Dosquebradas":"Risaralda", "Envigado":"Antioquia", "Ibagué":"Tolima", "Itagüí":"Antioquia",
+                       "Madrid":"Cundinamarca", "Manizales":"Caldas", "Medellín":"Antioquia", "Neiva":"Huila",
+                       "Palmira":"Valle del Cauca", "Pereira":"Risaralda", "Popayán":"Cauca", "Rionegro":"Antioquia",
+                       "Santa Marta":"Magdalena", "Soacha":"Cundinamarca", "Subachoque":"Cundinamarca", "Tolima":"Tolima",
+                       "Villa del Rosario":"Norte de Santander", "Villavicencio":"Meta", "Viterbo":"Caldas"
+                       }
+
+#%%
+#Fuente original: https://www.ins.gov.co/Noticias/Paginas/Coronavirus.aspx
+path_to_csv = "C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\inputs\\casos_colombia.csv"
+df_colombia = pd.read_csv(path_to_csv)
+print("dic ciudades vs ciudades en base (deben ser iguales): ", len(ciudad_departamento), " vs ", len(df_colombia["Ciudad de ubicación"].unique()))
+#%%
+df_colombia["Ciudad de ubicación"] = df_colombia["Ciudad de ubicación"].replace(ciudad_departamento)
+df_colombia.rename(columns = {"Ciudad de ubicación":"Departamento"}, inplace = True)
+df_colombia = df_colombia.pivot_table(index='Departamento', columns='Fecha de diagnóstico', aggfunc=len, fill_value=0)["ID de caso"]
+df_colombia = df_colombia.reset_index(level=0, drop=False)
+#df_colombia = df_colombia.reset_index(level=1, drop=True)
+print(df_colombia.head(), df_colombia["Departamento"].values, df_colombia.columns, df_colombia.shape)
 
 #%%
 #create missing columns and order
-columns_missing = [pd.datetime(2020, 3, 7), pd.datetime(2020, 3, 8), pd.datetime(2020, 3, 10)]
+columns_missing = ["07/03/2020", "08/03/2020", "10/03/2020"]
 for col in columns_missing:
     df_colombia[col] = 0
-columns_ordered = df_colombia.columns[df_colombia.columns != 'Etiquetas de fila'].sort_values().to_list()
-df_colombia = df_colombia[["Etiquetas de fila"] + columns_ordered]
+columns_ordered = df_colombia.columns[df_colombia.columns != 'Departamento'].sort_values().to_list()
+df_colombia = df_colombia[["Departamento"] + columns_ordered]
 print(df_colombia.head(), df_colombia.columns, df_colombia.shape)
 
 #%%
@@ -27,11 +64,13 @@ for i in range(len(columns_ordered)):
         col = columns_ordered[i]
         sig_col = columns_ordered[i + 1]
         df_colombia[sig_col] = df_colombia[col] + df_colombia[sig_col]
-    
-#df_colombia.to_excel("C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\outputs\\colombia_fixed_pivoted.xlsx", index = False)
+
+path_save_pivoted =  "C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\outputs\\colombia_fixed_pivoted.xlsx"
+df_colombia.to_excel(path_save_pivoted, index = False)
 
 #%%
 #Unpivot df
-df_colombia_fixed = pd.melt(df_colombia, id_vars=['Etiquetas de fila'], value_vars=columns_ordered)        
-df_colombia_fixed.to_excel("C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\outputs\\colombia_fixed.xlsx", index = False)
+df_colombia_fixed = pd.melt(df_colombia, id_vars=['Departamento'], value_vars=columns_ordered)  
+path_save_final = "C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\outputs\\colombia_fixed.xlsx"       
+df_colombia_fixed.to_excel(path_save_final, index = False)
 

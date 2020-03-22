@@ -16,7 +16,7 @@ response = requests.get("https://coronavirus-19-api.herokuapp.com/countries")
 json_df = json.dumps(response.json()) 
 df_today = pd.read_json(json_df, orient = 'records')
 df_today["date"] = date.today()
-print(df_today, df_today[df_today.country == "Colombia"])
+print(df_today, df_today[df_today.country == "Peru"])
 #%%
 #Open complete data for country since 2020-03-15
 df_all_days = pd.read_csv("C:\\Users\\USUARIO\\Desktop\\Python\\Coronavirus\\inputs\\base_diaria.csv", sep = ";")
